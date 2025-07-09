@@ -1,4 +1,4 @@
-# Python specific ignores
+# Python specific ignores (from your local .gitignore)
 __pycache__/
 *.pyc
 *.pyd
@@ -7,7 +7,7 @@ venv/
 env/
 .env
 
-# Webots specific ignores
+# Webots specific ignores (from your local .gitignore)
 .webots/
 *.log
 *.out
@@ -15,13 +15,12 @@ env/
 *.sync
 *.wbt.sync
 *.wbt.temp
-# If you compile C/C++ controllers (even if not primary, good to have)
 build/
 *.o
 *.obj
 *.exe
 a.out
 
-# Linux/macOS specific ignores
+# OS specific ignores (often found in GitHub's default templates)
 .DS_Store # macOS
 Thumbs.db # Windows
