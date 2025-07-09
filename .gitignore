@@ -1,0 +1,27 @@
+# Python specific ignores
+__pycache__/
+*.pyc
+*.pyd
+.Python/
+venv/
+env/
+.env
+
+# Webots specific ignores
+.webots/
+*.log
+*.out
+*.cache
+*.sync
+*.wbt.sync
+*.wbt.temp
+# If you compile C/C++ controllers (even if not primary, good to have)
+build/
+*.o
+*.obj
+*.exe
+a.out
+
+# Linux/macOS specific ignores
+.DS_Store # macOS
+Thumbs.db # Windows
