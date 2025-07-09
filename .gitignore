@@ -1,0 +1,26 @@
+# Python specific ignores (from your local .gitignore)
+__pycache__/
+*.pyc
+*.pyd
+.Python/
+venv/
+env/
+.env
+
+# Webots specific ignores (from your local .gitignore)
+.webots/
+*.log
+*.out
+*.cache
+*.sync
+*.wbt.sync
+*.wbt.temp
+build/
+*.o
+*.obj
+*.exe
+a.out
+
+# OS specific ignores (often found in GitHub's default templates)
+.DS_Store # macOS
+Thumbs.db # Windows
