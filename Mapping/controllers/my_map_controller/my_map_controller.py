@@ -66,7 +66,7 @@ class ProbabilisticOccupancyMap:
     OUTPUT_DIR = "map_outputs"
 
     def __init__(self, robot_radius):
-        self.map_data = np.zeros((self.GRID_WIDTH, self.GRID_HEIGHT), dtype=np.float32)
+        self.map_data = np.zeros((self.GRID_HEIGHT, self.GRID_WIDTH), dtype=np.float32)
         self.robot_radius = robot_radius # Robot radius for obstacle growing
         self._create_output_dir()
         print(f"Probabilistic_Occupancy_Map initialized. Map: {self.GRID_WIDTH}x{self.GRID_HEIGHT} cells. Output: '{self.OUTPUT_DIR}'")
@@ -133,7 +133,7 @@ class ProbabilisticOccupancyMap:
             lx, ly = lidar_hits_world[0, k], lidar_hits_world[1, k]
             px_g, py_g = self._world_to_grid(lx, ly)
             # bounds check
-            if 0 <= px_g < self.GRID_HEIGHT and 0 <= py_g < self.GRID_WIDTH:
+            if 0 <= px_g < self.GRID_WIDTH and 0 <= py_g < self.GRID_HEIGHT:
                 self.map_data[py_g, px_g] = min(self.map_data[py_g, px_g] + 0.01, 1.0)  
             
     def grow_obstacles(self):
@@ -423,12 +423,12 @@ class TaigoliteController:
             for x_grid in range(self.occupancy_map.GRID_WIDTH): # Iterate through X-dimension (columns)
                 # Calculate pixel color based on map data (same as before)
                 if map_data.dtype == np.float32: # Probabilistic map
-                    log_odds = map_data[x_grid, y_grid] # Access map using (col, row)
+                    log_odds = map_data[y_grid, x_grid] # Access map using (col, row) -- wrong
                     probability = self.occupancy_map._log_odds_to_probability(log_odds)
                     gray_value = int(probability * 255)
                     color = (gray_value << 16) | (gray_value << 8) | gray_value
                 else: # Binary map (C-Space)
-                    is_obstacle = map_data[x_grid, y_grid] # Access map using (col, row)
+                    is_obstacle = map_data[y_grid, x_grid] # Access map using (col, row) -- wrong
                     color = 0x000000 if is_obstacle else 0xFFFFFF # Black for obstacles, white for free
                 
                 self.display.setColor(color)
@@ -437,7 +437,8 @@ class TaigoliteController:
                 #    The Y-axis is flipped because Webots Display (0,0) is top-left,
                 #    while our map's (0,0) is conceptualized as bottom-left.
                 display_rect_x = int(x_grid * scale_x)
-                display_rect_y = int((self.occupancy_map.GRID_HEIGHT - 1 - y_grid) * scale_y)
+                #display_rect_y = int((self.occupancy_map.GRID_HEIGHT - 1 - y_grid) * scale_y)
+                display_rect_y = int(y_grid * scale_y)
 
                 # Calculate the width and height of the rectangle
                 # IMPORTANT CHANGE: Use math.ceil() to ensure coverage

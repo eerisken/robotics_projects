@@ -53,8 +53,8 @@ class ProbabilisticOccupancyMap:
     GRID_HEIGHT = int(np.ceil(MAP_Y_DIM_METERS / MAP_RESOLUTION)) # GRID_HEIGHT now refers to Y-dimension
 
     # Log-odds update values
-    LOG_ODDS_OCCUPIED = np.log(0.99 / 0.01)
-    LOG_ODDS_FREE = np.log(0.01 / 0.99)
+    LOG_ODDS_OCCUPIED = np.log(0.9 / 0.1)
+    LOG_ODDS_FREE = np.log(0.1 / 0.9) / 10.0
     LOG_ODDS_CLAMP_MAX = 5.0
     LOG_ODDS_CLAMP_MIN = -5.0
 
@@ -66,7 +66,7 @@ class ProbabilisticOccupancyMap:
     OUTPUT_DIR = "map_outputs"
 
     def __init__(self, robot_radius):
-        self.map_data = np.zeros((self.GRID_WIDTH, self.GRID_HEIGHT), dtype=np.float32)
+        self.map_data = np.zeros((self.GRID_HEIGHT, self.GRID_WIDTH), dtype=np.float32)
         self.robot_radius = robot_radius # Robot radius for obstacle growing
         self._create_output_dir()
         print(f"Probabilistic_Occupancy_Map initialized. Map: {self.GRID_WIDTH}x{self.GRID_HEIGHT} cells. Output: '{self.OUTPUT_DIR}'")
@@ -82,6 +82,10 @@ class ProbabilisticOccupancyMap:
         """Converts world coordinates (x, y) to grid coordinates (col, row)."""
         col = int((x_world - ProbabilisticOccupancyMap.MAP_ORIGIN_X) / ProbabilisticOccupancyMap.MAP_RESOLUTION)
         row = int((y_world - ProbabilisticOccupancyMap.MAP_ORIGIN_Y) / ProbabilisticOccupancyMap.MAP_RESOLUTION)
+        
+        col = max(0, min(col, ProbabilisticOccupancyMap.GRID_WIDTH - 1))
+        row = max(0, min(row, ProbabilisticOccupancyMap.GRID_HEIGHT - 1))
+    
         return col, row
 
     @staticmethod
@@ -111,22 +115,21 @@ class ProbabilisticOccupancyMap:
     @staticmethod
     def _bresenham_line(x0, y0, x1, y1):
         """Yields (x, y) coordinates for a line using Bresenham's algorithm."""
+        points = []
         dx = abs(x1 - x0)
-        dy = abs(y1 - y0)
+        dy = -abs(y1 - y0)
         sx = 1 if x0 < x1 else -1
         sy = 1 if y0 < y1 else -1
-        err = dx - dy
-
-        points = []
+        err = dx + dy
         while True:
             points.append((x0, y0))
             if x0 == x1 and y0 == y1:
                 break
             e2 = 2 * err
-            if e2 > -dy:
-                err -= dy
+            if e2 >= dy:
+                err += dy
                 x0 += sx
-            if e2 < dx:
+            if e2 <= dx:
                 err += dx
                 y0 += sy
         return points
@@ -141,15 +144,17 @@ class ProbabilisticOccupancyMap:
 
         # Define the number of readings to exclude from each end
         EXCLUDE_READINGS = 80
-
+        angles = np.linspace(lidar_field_of_view/2, -lidar_field_of_view/2, lidar_horizontal_resolution) #[EXCLUDE_READINGS:-EXCLUDE_READINGS]
+        ranges = lidar_range_image #[EXCLUDE_READINGS:-EXCLUDE_READINGS]
+        
         # Adjust the range of the loop to skip the first and last EXCLUDE_READINGS
         # The loop will now iterate from EXCLUDE_READINGS up to (lidar_horizontal_resolution - EXCLUDE_READINGS - 1)
         for i in range(EXCLUDE_READINGS, lidar_horizontal_resolution - EXCLUDE_READINGS):
-            ray_angle_relative_to_lidar = -lidar_field_of_view / 2 + i * (lidar_field_of_view / (lidar_horizontal_resolution - 1))
+            ray_angle_relative_to_lidar = angles[i] #-lidar_field_of_view / 2 + i * (lidar_field_of_view / (lidar_horizontal_resolution - 1))
             absolute_ray_angle = self._normalize_angle(robot_heading + ray_angle_relative_to_lidar)
             #absolute_ray_angle = robot_heading + ray_angle_relative_to_lidar 
 
-            distance = lidar_range_image[i]
+            distance = ranges[i]
             
             effective_distance = distance
             if math.isinf(distance) or distance > lidar_max_range:
@@ -164,19 +169,19 @@ class ProbabilisticOccupancyMap:
             hit_x = self._clamp_world_coordinate(hit_x_unclamped, self.MAP_ORIGIN_X, self.MAP_X_DIM_METERS)
             hit_y = self._clamp_world_coordinate(hit_y_unclamped, self.MAP_ORIGIN_Y, self.MAP_Y_DIM_METERS)
             
-            hit_grid_row, hit_grid_col = self._world_to_grid(hit_x, hit_y)
+            hit_grid_col, hit_grid_row = self._world_to_grid(hit_x, hit_y)
 
             # Ensure hit point is within grid boundaries for Bresenham
-            hit_grid_row = self._clamp(hit_grid_row, 0, self.GRID_WIDTH - 1)
-            hit_grid_col = self._clamp(hit_grid_col, 0, self.GRID_HEIGHT - 1)
+            hit_grid_row = self._clamp(hit_grid_row, 0, self.GRID_HEIGHT - 1)
+            hit_grid_col = self._clamp(hit_grid_col, 0, self.GRID_WIDTH - 1)
             
             # Generate cells along the ray from robot to hit point (or max_range point)
-            ray_cells = self._bresenham_line(robot_grid_row, robot_grid_col, hit_grid_row, hit_grid_col)
+            ray_cells = self._bresenham_line(robot_grid_col, robot_grid_row, hit_grid_col, hit_grid_row)
             #print("grid col row", robot_grid_col, robot_grid_row, hit_grid_col, hit_grid_row, len(ray_cells))
 
             # --- Unified Free and Occupied Space Marking Logic ---
-            for row, col in ray_cells:
-                if 0 <= col < self.GRID_HEIGHT and 0 <= row < self.GRID_WIDTH:
+            for col, row in ray_cells:
+                if 0 <= col < self.GRID_WIDTH and 0 <= row < self.GRID_HEIGHT:
                     is_hit_cell = (col == hit_grid_col and row == hit_grid_row)
                     
                     if is_hit_cell and not math.isinf(distance) and distance <= lidar_max_range:
@@ -532,30 +537,60 @@ class TaigoliteController:
             self.trajectory_finished = True
 
     def _display_webots_map(self, map_data):
-        """Displays the given map on the Webots map_display device."""
+        """
+        Displays the given map on the Webots 'display' device with scaling
+        to fill the entire display area, regardless of map resolution.
+        """
         if not self.display:
             return
         
-        # Grid (col, row) maps to (x_grid, y_grid) where x_grid is horizontal, y_grid is vertical
-        # Webots Display (0,0) is top-left, our map (0,0) is bottom-left
-        # We need to flip the y-axis for display in Webots
-        
+        # 1. Get the actual dimensions of the Webots Display node
+        display_width = self.display.getWidth()
+        display_height = self.display.getHeight()
+
+        # 2. Calculate scaling factors
+        # These factors determine how many display pixels correspond to one map grid cell
+        scale_x = display_width / self.occupancy_map.GRID_WIDTH
+        scale_y = display_height / self.occupancy_map.GRID_HEIGHT
+
+        # 3. Clear the display before drawing the new map frame
+        self.display.setColor(0x000000) # Black background
+        self.display.fillRectangle(0, 0, display_width, display_height)
+
+        # 4. Iterate through grid cells and draw scaled rectangles
         for y_grid in range(self.occupancy_map.GRID_HEIGHT): # Iterate through Y-dimension (rows)
             for x_grid in range(self.occupancy_map.GRID_WIDTH): # Iterate through X-dimension (columns)
-                display_x = x_grid
-                display_y = self.occupancy_map.GRID_HEIGHT - 1 - y_grid # Flip Y-axis for Webots display
-
+                # Calculate pixel color based on map data (same as before)
                 if map_data.dtype == np.float32: # Probabilistic map
-                    log_odds = map_data[x_grid, y_grid] # Access map using (col, row)
+                    log_odds = map_data[y_grid, x_grid] # Access map using (col, row) -- wrong
                     probability = self.occupancy_map._log_odds_to_probability(log_odds)
                     gray_value = int(probability * 255)
                     color = (gray_value << 16) | (gray_value << 8) | gray_value
                 else: # Binary map (C-Space)
-                    is_obstacle = map_data[x_grid, y_grid] # Access map using (col, row)
-                    color = 0x000000 if is_obstacle else 0xFFFFFF
-
+                    is_obstacle = map_data[y_grid, x_grid] # Access map using (col, row) -- wrong
+                    color = 0x000000 if is_obstacle else 0xFFFFFF # Black for obstacles, white for free
+                
                 self.display.setColor(color)
-                self.display.drawPixel(display_x, display_y)
+
+                # 5. Calculate the top-left corner of the rectangle on the display
+                #    The Y-axis is flipped because Webots Display (0,0) is top-left,
+                #    while our map's (0,0) is conceptualized as bottom-left.
+                display_rect_x = int(x_grid * scale_x)
+                #display_rect_y = int((self.occupancy_map.GRID_HEIGHT - 1 - y_grid) * scale_y)
+                display_rect_y = int(y_grid * scale_y)
+
+                # Calculate the width and height of the rectangle
+                # IMPORTANT CHANGE: Use math.ceil() to ensure coverage
+                rect_width = int(math.ceil(scale_x))
+                rect_height = int(math.ceil(scale_y))
+                
+                # 7. Ensure minimum 1 pixel size if scaling is very small
+                #    This prevents issues if scale_x or scale_y results in 0 (e.g., if display is smaller than map)
+                if rect_width == 0: rect_width = 1
+                if rect_height == 0: rect_height = 1
+
+                # 8. Draw the scaled rectangle instead of a single pixel
+                self.display.fillRectangle(display_rect_x, display_rect_y, rect_width, rect_height)
 
     # --- Main Robot Loop ---
     def run(self):
@@ -581,12 +616,12 @@ class TaigoliteController:
                 field_of_view = self.lidar.getFov()
                 max_range = self.lidar.getMaxRange()
                 
-                self.occupancy_map.update_map2(
+                self.occupancy_map.update_map(
                     robot_x, robot_y, robot_heading,
                     range_image, horizontal_resolution, 
                     field_of_view, max_range
                 )
-                #self._display_webots_map(self.occupancy_map.get_map_data())
+                self._display_webots_map(self.occupancy_map.get_map_data())
             else:
                 if not self.map_processed_and_saved:
                     print("Trajectory finished. Processing and saving maps...")

@@ -2618,7 +2618,7 @@ Robot {
     density -1
     mass 28.26649
   }
-  controller "my_map_controller"
+  controller "my_brasenham_controller"
   supervisor TRUE
 }
 DEF marker Ball {
