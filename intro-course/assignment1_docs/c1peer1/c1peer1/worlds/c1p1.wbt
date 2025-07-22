@@ -1,0 +1,60 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.4975369047094151 0.5019101095874293 0.7074908270402586 1.901862712637593
+  position -0.0018679316663357804 -0.8340089077004794 2.7794863440547446
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  translation 0.0152742 0.00220285 1.33711e-14
+  floorSize 3 3
+}
+Solid {
+  translation -0.5 0 0.1
+  children [
+    DEF BOX Shape {
+      appearance PBRAppearance {
+        metalness 0
+      }
+      geometry Box {
+        size 0.2 0.2 0.2
+      }
+    }
+  ]
+  boundingObject USE BOX
+}
+Solid {
+  translation 0.49999868758576815 -1.1481904266795716e-06 0.09686080000218408
+  rotation -9.673483689026168e-05 9.458708943638013e-05 -0.9999999908478269 4.747324160147862e-08
+  children [
+    DEF BOX Shape {
+      appearance PBRAppearance {
+        metalness 0
+      }
+      geometry Box {
+        size 0.2 0.2 0.2
+      }
+    }
+  ]
+  name "solid2"
+  boundingObject USE BOX
+  physics Physics {
+  }
+}
+PointLight {
+  attenuation 0 0 1
+  location 1 0.2 0.5
+}
+E-puck {
+  controller "EPuckGoForward"
+}

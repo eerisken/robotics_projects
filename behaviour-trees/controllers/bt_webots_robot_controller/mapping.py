@@ -59,13 +59,34 @@ class MapEnvironment(py_trees.behaviour.Behaviour):
         # Get Lidar data
         # Lidar returns range image (distances) and point cloud (x,y,z points relative to lidar).
         # Using point cloud is generally easier for mapping.
-        lidar_range_image = self.lidar.getRangeImage()
+        ranges = np.array(self.lidar.getRangeImage())
         lidar_horizontal_resolution = self.lidar.getHorizontalResolution()
         lidar_points = self.lidar.getNumberOfPoints()
         lidar_field_of_view = self.lidar.getFov()
         lidar_max_range = self.lidar.getMaxRange()
         
-                # Define the number of readings to exclude from each end
+        """
+        # Get GPS
+        xw = self.gps.getValues()[0]
+        yw = self.gps.getValues()[1]   
+        # Read compass values
+        robot_angle = np.arctan2(self.compass.getValues()[0],self.compass.getValues()[1])
+        # Read lidar data
+        ranges = np.array(self.lidar.getRangeImage())
+        ranges[ranges == np.inf] = 100
+        # Transform matrix 
+        w_T_r = np.array([[np.cos(robot_angle), -np.sin(robot_angle), xw], 
+                        [np.sin(robot_angle), np.cos(robot_angle), yw],
+                        [0, 0, 1]])        
+        # Add lidar offset from robot center (0.202 m)
+        lidar_offset = np.array([[1, 0,  0.202],
+                                    [0, 1,  0],
+                                    [0, 0,  1]])               
+        X_i = np.array([ranges*np.cos(self.angles), ranges*np.sin(self.angles), np.ones((667,))])
+        D = w_T_r @ (lidar_offset @ X_i)
+        """
+        
+        # Define the number of readings to exclude from each end
         EXCLUDE_READINGS = 80
 
         w_T_r = np.array([[np.cos(robot_theta), -np.sin(robot_theta), robot_x], 
@@ -73,10 +94,15 @@ class MapEnvironment(py_trees.behaviour.Behaviour):
                  [0,0,1]])
                  
         angles = np.linspace(lidar_field_of_view/2, -lidar_field_of_view/2, lidar_horizontal_resolution)[EXCLUDE_READINGS:-EXCLUDE_READINGS]
-        ranges = np.minimum(lidar_range_image, 7.0)[EXCLUDE_READINGS:-EXCLUDE_READINGS]
+        ranges = np.minimum(ranges, 7.0)[EXCLUDE_READINGS:-EXCLUDE_READINGS]
         
+        # Add lidar offset from robot center (0.202 m)
+        lidar_offset = np.array([[1, 0,  0.202],
+                                    [0, 1,  0],
+                                    [0, 0,  1]]) 
+                                    
         x_i = np.array([ranges*np.cos(angles), ranges*np.sin(angles), np.ones(ranges.shape[0])])
-        D = w_T_r @ x_i
+        D = w_T_r @ x_i #D = w_T_r @ (lidar_offset @ x_i) 
         
         for k in range(D.shape[1]):
             lx, ly = D[0, k], D[1, k]

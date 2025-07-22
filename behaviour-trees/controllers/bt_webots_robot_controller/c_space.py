@@ -1,6 +1,7 @@
 # c_space_generator.py
 import numpy as np
 import os
+from scipy.signal import convolve2d
 from scipy.ndimage import binary_dilation, median_filter, uniform_filter, distance_transform_edt
 from map_data import Map # Import the Map class
 
@@ -42,7 +43,69 @@ class CSpaceGenerator:
 
         print(f"CSpaceGenerator initialized with robot_radius_pixels={self.robot_radius_pixels}, "
               f"filter_size={self.filter_size}.")
+     
+    def generate_c_space_PEERS(self): 
+        if self.original_map.grid is None:
+            print("Error: Original map grid is empty. Cannot generate C-space.")
+            return
+                     
+        kernel= np.ones((24,24))
+        cmap = convolve2d(self.original_map.grid,kernel,mode='same')
+        # Use 90% threshold 
+        cspace = cmap > 0.6
         
+        self.c_space_grid = cspace
+        self.c_space_map_object.grid = self.c_space_grid # Update the C-space Map object's grid
+        print("C-space generated successfully.")
+
+    @staticmethod
+    def _disk_kernel(radius_px: int) -> np.ndarray:
+        """
+        Returns a (2r+1)×(2r+1) binary mask whose 1‑pixels form a filled circle.
+        """
+        if radius_px <= 0:
+            return np.ones((1, 1), dtype=np.uint8)
+
+        y, x = np.ogrid[-radius_px : radius_px + 1,
+                        -radius_px : radius_px + 1]
+        mask = (x**2 + y**2) <= radius_px**2
+        return mask.astype(np.uint8)
+    
+    def cspace_disk(self, occ_grid, radius_cells):
+        disk_kernel = self.make_disk(self.robot_radius_pixels)
+        return binary_dilation(occ_grid, structure=disk_kernel).astype(np.uint8)
+    
+    def generate_c_space_OLD(self) -> None:
+        """
+        Generates a configuration space map using obstacle inflation (binary dilation).
+        Treats value `2` as OCCUPIED; all else as FREE.
+        """
+        if self.original_map.grid is None:
+            print("Error: Original map grid is empty. Cannot generate C-space.")
+            return
+
+        # 1. Convert original occupancy map to binary: 1 = OCCUPIED (2), 0 = FREE/UNKNOWN
+        occ_binary = (self.original_map.grid == Map.OCCUPIED).astype(np.uint8)
+
+        # 2. Optional: Denoise using a uniform filter and threshold
+        smoothed = uniform_filter(occ_binary.astype(np.float32),
+                                  size=self.filter_size,
+                                  mode="nearest")
+        denoised = (smoothed > 0.5)  # boolean mask: True where likely obstacle
+
+        # 3. Inflate obstacles using binary dilation with a disk kernel
+        kernel = self._disk_kernel(self.robot_radius_pixels)
+        inflated = binary_dilation(denoised, structure=kernel)
+
+        # 4. Create new C-space grid
+        c_space = np.copy(self.original_map.grid)
+        c_space[inflated] = Map.OCCUPIED  # Set inflated obstacles to 2
+
+        # 5. Save result
+        self.c_space_grid = c_space
+        self.c_space_map_object.grid = c_space
+        print("C-space generated successfully.")
+    
     def generate_c_space(self):
         """
         Generates the configuration space map from the original occupancy grid.
