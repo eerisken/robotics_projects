@@ -26,3 +26,12 @@ This repository contains a collection of robotics projects developed using the [
    ```bash
    git clone https://github.com/your-username/robotics-projects.git
 
+---
+
+### 🛠 Running Webots Without Snap (Distrobox Guide)
+
+If you're using a non-Snap Linux distro (like Fedora, Arch, or Debian minimal), you can still run Webots using [Distrobox](https://distrobox.it/).  
+Check out this detailed guide:
+
+📄 [Running Webots on a Non-Snap Linux Distro Using Distrobox](https://gist.github.com/eerisken/cd36515d2fc9de67cb5dbccea246efad)
+
