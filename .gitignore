@@ -24,3 +24,5 @@ a.out
 # OS specific ignores (often found in GitHub's default templates)
 .DS_Store # macOS
 Thumbs.db # Windows
+final-project-files/
+intro-course/
