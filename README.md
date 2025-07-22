@@ -12,8 +12,10 @@ This repository contains a collection of robotics projects developed using the [
 
 ## 🧠 Projects Highlights
 
+- **Arm Kinematics and Manipulation:** Pick and Place task execution using Webots Tiago robot.
+- **Behaviour Trees:** Behaviour Trees implemenatation for mapping and navigation.
 - **Mapping:** Using LIDAR-based SLAM and waypoint tracking to map the kitchen.
-- **Range Finder:** Line following with Webots epuck robot.
+- **Line Follower:** Line following with Webots epuck robot.
 
 ---
 

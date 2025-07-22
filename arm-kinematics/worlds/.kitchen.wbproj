@@ -1,0 +1,22 @@
+Webots Project File version R2025a
+perspectives: 000000ff00000000fd00000002000000010000011c00000210fc0200000001fb0000001400540065007800740045006400690074006f00720100000018000002100000008900ffffff0000000300000600000000d9fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000006000000006900ffffff000004e20000021000000001000000020000000100000008fc00000000
+simulationViewPerspectives: 000000ff000000010000000200000100000003e20100000002010000000101
+sceneTreePerspectives: 000000ff000000010000000300000102000000d2000000000100000002010000000201
+maximizedDockId: -1
+centralWidgetVisible: 1
+projectionMode: PERSPECTIVE
+renderingMode: PLAIN
+orthographicViewHeight: 13.1694
+textFiles: 0 "controllers/bt_webots_robot_controller/bt_webots_robot_controller.py" "controllers/bt_webots_robot_controller/behavior_tree.py" "controllers/bt_webots_robot_controller/fold_arm.py" "controllers/bt_webots_robot_controller/pick_place.py" "controllers/bt_webots_robot_controller/robot_helper.py" "controllers/bt_webots_robot_controller/blackboard.py" "controllers/bt_webots_robot_controller/planning.py" "controllers/bt_webots_robot_controller/navigation.py" "controllers/bt_webots_robot_controller/mapping.py" "controllers/bt_webots_robot_controller/turn_behaviour.py" "controllers/bt_webots_robot_controller/pick_place2.py"
+globalOptionalRendering: CoordinateSystem
+consoles: Console:All:All
+renderingDevicePerspectives: TIAGo LITE:Astra depth;1;0.0666667;0;0.00281163
+renderingDevicePerspectives: TIAGo LITE:Astra rgb;1;0.0666667;0;0.497657
+renderingDevicePerspectives: TIAGo LITE:display;1;0.625;0;0
+renderingDevicePerspectives: TIAGo LITE:display1;1;1;0;0
+renderingDevicePerspectives: TIAGo LITE:map_display;1;0.5;0;0
+renderingDevicePerspectives: TIAGo:Astra depth;1;0.895833;0;0
+renderingDevicePerspectives: TIAGo:Astra rgb;1;0.895833;0;0
+renderingDevicePerspectives: TIAGo:camera;1;1;0;0
+renderingDevicePerspectives: TIAGo:display;1;0.625;0;0
+renderingDevicePerspectives: TIAGo:display_original_map;1;1;0;0
